@@ -6,9 +6,11 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Build
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
+import androidx.lifecycle.MutableLiveData
 
 const val AVN_NOTIFICATION_ID = 1001
 const val NOTIFICATION_CHANNEL_GENERAL = "General"
@@ -20,6 +22,7 @@ class NLService : NotificationListenerService() {
 
     companion object {
         var instance: NLService? = null
+        var lastNotificationTextData = MutableLiveData("")
 
         fun isInstanceCreated(): Boolean {
             return instance != null
@@ -27,7 +30,7 @@ class NLService : NotificationListenerService() {
     }
 
     fun defaultNotification(): Notification.Builder {
-        return Notification.Builder(this, NOTIFICATION_CHANNEL_GENERAL)
+        val notification = Notification.Builder(this, NOTIFICATION_CHANNEL_GENERAL)
             .setContentTitle("Service enabled").setContentText("Service is running")
             .setSmallIcon(R.drawable.baseline_notifications_active_24)
             .setOngoing(true)
@@ -39,6 +42,13 @@ class NLService : NotificationListenerService() {
                     PendingIntent.FLAG_IMMUTABLE
                 )
             )
+            .setVisibility(Notification.VISIBILITY_PUBLIC)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            notification.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE)
+        }
+
+        return notification
     }
 
     override fun onCreate() {
@@ -72,13 +82,20 @@ class NLService : NotificationListenerService() {
         startForeground(AVN_NOTIFICATION_ID, defaultNotification().build())
         Log.i(TAG, "Notification listener service started")
 
-        return super.onStartCommand(intent, flags, startId)
+        return START_STICKY
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        if (prefs.getBoolean(PREF_RETAIN_SERVICE, true)) {
+            val serviceIntent = Intent(this, NLService::class.java)
+            startForegroundService(serviceIntent)
+        }
+
+        super.onTaskRemoved(rootIntent)
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
-
-        val notificationManager = getSystemService(NotificationManager::class.java)
 
         if (sbn.packageName != "com.viber.voip") {
             return
@@ -92,6 +109,7 @@ class NLService : NotificationListenerService() {
         lastMsgTime = sbn.notification.`when`
 
         val sbnTitle = sbn.notification.extras.getCharSequence(Notification.EXTRA_TITLE)
+        val sbnText = sbn.notification.extras.getCharSequence(Notification.EXTRA_TEXT)
         val sbnTitleLower = sbnTitle.toString().lowercase()
 
         val chatNames = listOf(
@@ -111,38 +129,53 @@ class NLService : NotificationListenerService() {
             if (name.isBlank()) {
                 continue
             }
-            val nameLower = name.lowercase()
-
-            if (sbnTitleLower.contains(nameLower)) {
-                val toneUri = Uri.parse(tone)
-
-                val notification = defaultNotification()
-                    .setContentText("Tap to stop ringtone")
-                    .setContentIntent(
-                        PendingIntent.getService(
-                            this,
-                            0,
-                            Intent(this, NotificationActionService::class.java).setAction(
-                                NotificationActionService.STOP_RINGTONE
-                            ),
-                            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_ONE_SHOT
-                        )
-                    )
-                    .build()
-                notificationManager.notify(AVN_NOTIFICATION_ID, notification)
-
-                mediaPlayer = if (tone.isNotBlank() && toneUri != null) {
-                    MediaPlayer.create(this, toneUri)
-                } else {
-                    MediaPlayer.create(this, R.raw.default_notification_tone)
-                }
-                mediaPlayer?.setOnCompletionListener {
-                    notificationManager.notify(AVN_NOTIFICATION_ID, defaultNotification().build())
-                }
-                mediaPlayer?.start()
-
-                break
+            if (!sbnTitleLower.contains(name.lowercase())) {
+                continue
             }
+
+            val lastNotificationText = "[${sbnTitle}]: \"${sbnText}\""
+            prefs.edit().putString(PREF_LAST_NOTIFICATION_TEXT, lastNotificationText).apply()
+            lastNotificationTextData.value = lastNotificationText
+
+            val notification = defaultNotification()
+                .setContentText("Tap to stop the ringtone")
+                .setContentIntent(
+                    PendingIntent.getService(
+                        this,
+                        0,
+                        Intent(this, NotificationActionService::class.java).setAction(
+                            NotificationActionService.STOP_RINGTONE
+                        ),
+                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_ONE_SHOT
+                    )
+                )
+                .build()
+
+            postNewNotification(notification, tone)
+            break
         }
+    }
+
+    private fun postNewNotification(notification: Notification, toneUriStr: String) {
+        try {
+            if (mediaPlayer != null && mediaPlayer!!.isPlaying) {
+                return
+            }
+        } catch (_: Exception) {
+        }
+
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        val toneUri = Uri.parse(toneUriStr)
+        notificationManager.notify(AVN_NOTIFICATION_ID, notification)
+
+        this.mediaPlayer = if (toneUriStr.isNotBlank() && toneUri != null) {
+            MediaPlayer.create(this, toneUri)
+        } else {
+            MediaPlayer.create(this, R.raw.default_notification_tone)
+        }
+        mediaPlayer?.setOnCompletionListener {
+            notificationManager.notify(AVN_NOTIFICATION_ID, defaultNotification().build())
+        }
+        mediaPlayer?.start()
     }
 }

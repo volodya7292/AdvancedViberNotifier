@@ -18,6 +18,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
 import androidx.core.widget.addTextChangedListener
 
@@ -26,6 +27,8 @@ const val PREFS_NAME = "PREFS"
 const val PREF_CHAT1 = "chatName1"
 const val PREF_CHAT2 = "chatName2"
 const val PREF_CHAT3 = "chatName3"
+const val PREF_RETAIN_SERVICE = "doRetainService"
+const val PREF_LAST_NOTIFICATION_TEXT = "lastNotificationText"
 const val PREF_CHAT1_RINGTONE_URI = "chat1_ringtone_uri"
 const val PREF_CHAT2_RINGTONE_URI = "chat2_ringtone_uri"
 const val PREF_CHAT3_RINGTONE_URI = "chat3_ringtone_uri"
@@ -33,6 +36,7 @@ const val PREF_CHAT3_RINGTONE_URI = "chat3_ringtone_uri"
 class MainActivity : AppCompatActivity() {
     lateinit var prefs: SharedPreferences
     lateinit var statusText: TextView
+    lateinit var lastNotificationText: TextView
     lateinit var ring1SelectB: ImageButton
     lateinit var ring2SelectB: ImageButton
     lateinit var ring3SelectB: ImageButton
@@ -63,11 +67,17 @@ class MainActivity : AppCompatActivity() {
         val chatName1ET = findViewById<EditText>(R.id.chatName1)
         val chatName2ET = findViewById<EditText>(R.id.chatName2)
         val chatName3ET = findViewById<EditText>(R.id.chatName3)
+        val strongServiceSwitch = findViewById<SwitchCompat>(R.id.strongServiceSwitch)
         ring1SelectB = findViewById(R.id.ring1SelectB)
         ring2SelectB = findViewById(R.id.ring2SelectB)
         ring3SelectB = findViewById(R.id.ring3SelectB)
         statusText = findViewById(R.id.statusText)
+        lastNotificationText = findViewById(R.id.lastNotificationText)
 
+        strongServiceSwitch.isChecked = prefs.getBoolean(PREF_RETAIN_SERVICE, true)
+        strongServiceSwitch.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit().putBoolean(PREF_RETAIN_SERVICE, isChecked).apply()
+        }
         versionText.text = "v${BuildConfig.VERSION_NAME}"
 
         chatName1ET.setText(prefs.getString(PREF_CHAT1, ""))
@@ -86,21 +96,25 @@ class MainActivity : AppCompatActivity() {
 
         ring1SelectB.setOnClickListener {
             val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER)
-            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION)
+            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALL)
             currentRingtonePrefName = PREF_CHAT1_RINGTONE_URI
             resultLauncher.launch(intent)
         }
         ring2SelectB.setOnClickListener {
             val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER)
-            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION)
+            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALL)
             currentRingtonePrefName = PREF_CHAT2_RINGTONE_URI
             resultLauncher.launch(intent)
         }
         ring3SelectB.setOnClickListener {
             val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER)
-            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION)
+            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALL)
             currentRingtonePrefName = PREF_CHAT3_RINGTONE_URI
             resultLauncher.launch(intent)
+        }
+
+        NLService.lastNotificationTextData.observe(this) {
+            lastNotificationText.text = it
         }
     }
 
@@ -139,6 +153,8 @@ class MainActivity : AppCompatActivity() {
                 android.graphics.PorterDuff.Mode.MULTIPLY
             )
         }
+
+        lastNotificationText.text = prefs.getString(PREF_LAST_NOTIFICATION_TEXT, "")
 
         super.onResume()
     }
