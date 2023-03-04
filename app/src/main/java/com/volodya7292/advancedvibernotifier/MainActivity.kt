@@ -67,17 +67,17 @@ class MainActivity : AppCompatActivity() {
         val chatName1ET = findViewById<EditText>(R.id.chatName1)
         val chatName2ET = findViewById<EditText>(R.id.chatName2)
         val chatName3ET = findViewById<EditText>(R.id.chatName3)
-        val strongServiceSwitch = findViewById<SwitchCompat>(R.id.strongServiceSwitch)
+//        val strongServiceSwitch = findViewById<SwitchCompat>(R.id.strongServiceSwitch)
         ring1SelectB = findViewById(R.id.ring1SelectB)
         ring2SelectB = findViewById(R.id.ring2SelectB)
         ring3SelectB = findViewById(R.id.ring3SelectB)
         statusText = findViewById(R.id.statusText)
         lastNotificationText = findViewById(R.id.lastNotificationText)
 
-        strongServiceSwitch.isChecked = prefs.getBoolean(PREF_RETAIN_SERVICE, true)
-        strongServiceSwitch.setOnCheckedChangeListener { _, isChecked ->
-            prefs.edit().putBoolean(PREF_RETAIN_SERVICE, isChecked).apply()
-        }
+//        strongServiceSwitch.isChecked = prefs.getBoolean(PREF_RETAIN_SERVICE, true)
+//        strongServiceSwitch.setOnCheckedChangeListener { _, isChecked ->
+//            prefs.edit().putBoolean(PREF_RETAIN_SERVICE, isChecked).apply()
+//        }
         versionText.text = "v${BuildConfig.VERSION_NAME}"
 
         chatName1ET.setText(prefs.getString(PREF_CHAT1, ""))

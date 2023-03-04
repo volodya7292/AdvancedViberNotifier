@@ -107,15 +107,15 @@
         app:layout_constraintEnd_toEndOf="parent"
         tools:text="_version_" />
 
-    <androidx.appcompat.widget.SwitchCompat
-        android:id="@+id/strongServiceSwitch"
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="32dp"
-        android:text="Strong service"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/chatName3" />
+<!--    <androidx.appcompat.widget.SwitchCompat-->
+<!--        android:id="@+id/strongServiceSwitch"-->
+<!--        android:layout_width="150dp"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginStart="16dp"-->
+<!--        android:layout_marginTop="32dp"-->
+<!--        android:text="Strong service"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintTop_toBottomOf="@+id/chatName3" />-->
 
     <TextView
         android:id="@+id/lastNotificationText"
