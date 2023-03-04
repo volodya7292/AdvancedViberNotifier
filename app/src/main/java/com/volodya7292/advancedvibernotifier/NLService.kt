@@ -57,6 +57,7 @@ class NLService : NotificationListenerService() {
             NOTIFICATION_CHANNEL_GENERAL,
             NotificationManager.IMPORTANCE_HIGH
         )
+        notificationChannel.setSound(null, null)
         notificationChannel.setShowBadge(false)
 
         val notificationManager = getSystemService(NotificationManager::class.java)
