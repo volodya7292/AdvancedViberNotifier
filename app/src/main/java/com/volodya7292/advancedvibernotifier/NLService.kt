@@ -82,14 +82,14 @@ class NLService : NotificationListenerService() {
         startForeground(AVN_NOTIFICATION_ID, defaultNotification().build())
         Log.i(TAG, "Notification listener service started")
 
-        return START_STICKY
+        return START_REDELIVER_INTENT
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        if (prefs.getBoolean(PREF_RETAIN_SERVICE, true)) {
-            val serviceIntent = Intent(this, NLService::class.java)
-            startForegroundService(serviceIntent)
-        }
+//        if (prefs.getBoolean(PREF_RETAIN_SERVICE, true)) {
+//            val serviceIntent = Intent(this, NLService::class.java)
+//            startForegroundService(serviceIntent)
+//        }
 
         super.onTaskRemoved(rootIntent)
     }
