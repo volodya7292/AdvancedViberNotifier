@@ -62,7 +62,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-    @SuppressLint("BatteryLife")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -120,17 +119,13 @@ class MainActivity : AppCompatActivity() {
             resultLauncher.launch(intent)
         }
 
-        fixPowerOptimizationsB.setOnClickListener {
-            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-            intent.data = Uri.parse("package:$packageName")
-            startActivity(intent)
-        }
 
         NLService.lastNotificationTextData.observe(this) {
             lastNotificationText.text = it
         }
     }
 
+    @SuppressLint("BatteryLife")
     override fun onResume() {
         if (Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
                 .contains(packageName)
@@ -170,8 +165,21 @@ class MainActivity : AppCompatActivity() {
         val powerManager = getSystemService(PowerManager::class.java)
         val powerOptimizationsAreOff = powerManager.isIgnoringBatteryOptimizations(packageName)
 
-        fixPowerOptimizationsB.visibility =
-            if (powerOptimizationsAreOff) View.GONE else View.VISIBLE
+        if (powerOptimizationsAreOff) {
+            fixPowerOptimizationsB.text = "Configure power optimizations"
+            fixPowerOptimizationsB.setOnClickListener {
+                val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                startActivity(intent)
+            }
+        } else {
+            fixPowerOptimizationsB.text = "Disable power optimizations"
+            fixPowerOptimizationsB.setBackgroundColor(getColor(R.color.red))
+            fixPowerOptimizationsB.setOnClickListener {
+                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+                intent.data = Uri.parse("package:$packageName")
+                startActivity(intent)
+            }
+        }
 
         lastNotificationText.text = prefs.getString(PREF_LAST_NOTIFICATION_TEXT, "")
 
