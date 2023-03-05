@@ -27,6 +27,7 @@ class NotificationActionService : Service() {
             notificationManager.notify(AVN_NOTIFICATION_ID, it.defaultNotification().build())
         }
 
+        stopSelf()
         return START_NOT_STICKY
     }
 }
