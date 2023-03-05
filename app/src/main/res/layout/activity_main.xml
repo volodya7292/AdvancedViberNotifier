@@ -107,15 +107,18 @@
         app:layout_constraintEnd_toEndOf="parent"
         tools:text="_version_" />
 
-<!--    <androidx.appcompat.widget.SwitchCompat-->
-<!--        android:id="@+id/strongServiceSwitch"-->
-<!--        android:layout_width="150dp"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:layout_marginStart="16dp"-->
-<!--        android:layout_marginTop="32dp"-->
-<!--        android:text="Strong service"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        app:layout_constraintTop_toBottomOf="@+id/chatName3" />-->
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/stopSecondServiceSwitch"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="16dp"
+        android:alpha="0.5"
+        android:text="Stop NotificationActionService after the action"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/chatName3" />
 
     <TextView
         android:id="@+id/lastNotificationText"
@@ -134,6 +137,17 @@
         android:layout_marginBottom="8dp"
         android:text="Last notification:"
         app:layout_constraintBottom_toTopOf="@+id/statusText"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/fixPowerOptimizationsB"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="8dp"
+        android:text="Disable Power Optimizations"
+        android:visibility="visible"
+        app:layout_constraintBottom_toTopOf="@+id/textView2"
         app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

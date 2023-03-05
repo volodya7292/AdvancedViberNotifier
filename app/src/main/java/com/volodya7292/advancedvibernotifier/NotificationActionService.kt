@@ -2,12 +2,21 @@ package com.volodya7292.advancedvibernotifier
 
 import android.app.NotificationManager
 import android.app.Service
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.IBinder
 
 class NotificationActionService : Service() {
+    lateinit var prefs: SharedPreferences
+
     companion object {
         const val STOP_RINGTONE = "STOP_RINGTONE"
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
     override fun onBind(intent: Intent?): IBinder? {
@@ -27,7 +36,9 @@ class NotificationActionService : Service() {
             notificationManager.notify(AVN_NOTIFICATION_ID, it.defaultNotification().build())
         }
 
-        stopSelf()
+        if (prefs.getBoolean(PREF_STOP_SECOND_SERVICE, true)) {
+            stopSelf()
+        }
         return START_NOT_STICKY
     }
 }

@@ -86,15 +86,6 @@ class NLService : NotificationListenerService() {
         return START_REDELIVER_INTENT
     }
 
-    override fun onTaskRemoved(rootIntent: Intent?) {
-//        if (prefs.getBoolean(PREF_RETAIN_SERVICE, true)) {
-//            val serviceIntent = Intent(this, NLService::class.java)
-//            startForegroundService(serviceIntent)
-//        }
-
-        super.onTaskRemoved(rootIntent)
-    }
-
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
 
