@@ -62,6 +62,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+    private var optimizationsResultLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            checkPowerOptimizations()
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -119,7 +124,6 @@ class MainActivity : AppCompatActivity() {
             resultLauncher.launch(intent)
         }
 
-
         NLService.lastNotificationTextData.observe(this) {
             lastNotificationText.text = it
         }
@@ -162,28 +166,33 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
+        checkPowerOptimizations()
+
+        lastNotificationText.text = prefs.getString(PREF_LAST_NOTIFICATION_TEXT, "")
+
+        super.onResume()
+    }
+
+    private fun checkPowerOptimizations() {
         val powerManager = getSystemService(PowerManager::class.java)
         val powerOptimizationsAreOff = powerManager.isIgnoringBatteryOptimizations(packageName)
 
         if (powerOptimizationsAreOff) {
             fixPowerOptimizationsB.text = "Configure power optimizations"
+            fixPowerOptimizationsB.setBackgroundColor(getColor(R.color.gray))
             fixPowerOptimizationsB.setOnClickListener {
                 val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
                 startActivity(intent)
             }
         } else {
             fixPowerOptimizationsB.text = "Disable power optimizations"
-            fixPowerOptimizationsB.setBackgroundColor(getColor(R.color.red))
+            fixPowerOptimizationsB.setBackgroundColor(getColor(R.color.yellow))
             fixPowerOptimizationsB.setOnClickListener {
                 val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
                 intent.data = Uri.parse("package:$packageName")
-                startActivity(intent)
+                optimizationsResultLauncher.launch(intent)
             }
         }
-
-        lastNotificationText.text = prefs.getString(PREF_LAST_NOTIFICATION_TEXT, "")
-
-        super.onResume()
     }
 
     private fun startCheckRuntimePermissions() {
