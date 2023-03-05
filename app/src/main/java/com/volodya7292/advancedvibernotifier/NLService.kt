@@ -32,7 +32,7 @@ class NLService : NotificationListenerService() {
     fun defaultNotification(): Notification.Builder {
         val notification = Notification.Builder(this, NOTIFICATION_CHANNEL_GENERAL)
             .setContentTitle("Service enabled").setContentText("Service is running")
-            .setSmallIcon(R.drawable.baseline_notifications_active_24)
+            .setSmallIcon(R.drawable.baseline_notifications_24)
             .setOngoing(true)
             .setContentIntent(
                 PendingIntent.getActivity(
