@@ -102,7 +102,7 @@ class NLService : NotificationListenerService() {
 
         val sbnTitle = sbn.notification.extras.getCharSequence(Notification.EXTRA_TITLE)
         val sbnText = sbn.notification.extras.getCharSequence(Notification.EXTRA_TEXT)
-        val sbnTitleLower = sbnTitle.toString().lowercase()
+        val sbnTitleLower = sbnTitle.toString().trim().lowercase()
 
         val chatNames = listOf(
             prefs.getString(PREF_CHAT1, "")!!, prefs.getString(PREF_CHAT2, "")!!,
@@ -121,7 +121,7 @@ class NLService : NotificationListenerService() {
             if (name.isBlank()) {
                 continue
             }
-            if (!sbnTitleLower.contains(name.lowercase())) {
+            if (!sbnTitleLower.contains(name.trim().lowercase())) {
                 continue
             }
 
