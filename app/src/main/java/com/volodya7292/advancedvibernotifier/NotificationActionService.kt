@@ -24,16 +24,16 @@ class NotificationActionService : Service() {
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        if (intent.action == STOP_RINGTONE) {
-            try {
-                NLService.instance?.mediaPlayer?.stop()
-            } catch (_: Exception) {
-            }
-        }
-
         NLService.instance?.let {
+            if (intent.action == STOP_RINGTONE) {
+                try {
+                    it.mediaPlayer?.stop()
+                } catch (_: Exception) {
+                }
+            }
+
             val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager.notify(AVN_NOTIFICATION_ID, it.notificationDefault().build())
+            notificationManager.notify(AVN_NOTIFICATION_ID, it.notificationServiceRunning().build())
         }
 
         if (prefs.getBoolean(PREF_STOP_SECOND_SERVICE, true)) {

@@ -29,9 +29,9 @@ class NLService : NotificationListenerService() {
         }
     }
 
-    fun notificationDefault(): Notification.Builder {
+    fun notificationServiceStarting(): Notification.Builder {
         val notification = Notification.Builder(this, NOTIFICATION_CHANNEL_GENERAL)
-            .setContentTitle("Service enabled").setContentText("Service is running")
+            .setContentTitle("Service enabled").setContentText("Service is starting...")
             .setSmallIcon(R.drawable.baseline_notifications_24)
             .setOngoing(true)
             .setContentIntent(
@@ -51,8 +51,12 @@ class NLService : NotificationListenerService() {
         return notification
     }
 
+    fun notificationServiceRunning(): Notification.Builder {
+        return notificationServiceStarting().setContentText("Service is running")
+    }
+
     fun notificationViberMessageReceived(): Notification.Builder {
-        return notificationDefault()
+        return notificationServiceRunning()
             .setContentText("Tap to stop the ringtone")
             .setContentIntent(
                 PendingIntent.getService(
@@ -86,19 +90,20 @@ class NLService : NotificationListenerService() {
         super.onDestroy()
     }
 
-    override fun onListenerConnected() {
-        Log.i(TAG, "Notification listener connected")
-        super.onListenerConnected()
-    }
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         instance = this
         prefs = applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-        startForeground(AVN_NOTIFICATION_ID, notificationDefault().build())
+        startForeground(AVN_NOTIFICATION_ID, notificationServiceStarting().build())
         Log.i(TAG, "Notification listener service started")
 
         return START_REDELIVER_INTENT
+    }
+
+    override fun onListenerConnected() {
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.notify(AVN_NOTIFICATION_ID, notificationServiceRunning().build())
+        super.onListenerConnected()
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -160,17 +165,18 @@ class NLService : NotificationListenerService() {
         }
 
         val notificationManager = getSystemService(NotificationManager::class.java)
-        val toneUri = Uri.parse(toneUriStr)
         notificationManager.notify(AVN_NOTIFICATION_ID, notification)
 
-        this.mediaPlayer = if (toneUriStr.isNotBlank() && toneUri != null) {
-            MediaPlayer.create(this, toneUri)
-        } else {
-            MediaPlayer.create(this, R.raw.default_notification_tone)
-        }
+        val toneUri = Uri.parse(toneUriStr)
+        this.mediaPlayer = MediaPlayer.create(this, toneUri)
+
         mediaPlayer?.setOnCompletionListener {
-            notificationManager.notify(AVN_NOTIFICATION_ID, notificationDefault().build())
+            notificationManager.notify(AVN_NOTIFICATION_ID, notificationServiceRunning().build())
         }
-        mediaPlayer?.start()
+
+        try {
+            mediaPlayer?.start()
+        } catch (_: Exception) {
+        }
     }
 }

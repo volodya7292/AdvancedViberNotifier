@@ -1,8 +1,8 @@
 package com.volodya7292.advancedvibernotifier
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.NotificationManager
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
@@ -40,8 +40,8 @@ class MainActivity : AppCompatActivity() {
             Manifest.permission.READ_EXTERNAL_STORAGE
         }
     }
-    private val permissions by lazy {
-        val list = mutableListOf(permissionReadAudio)
+    private val requiredPermissions by lazy {
+        val list = mutableListOf<String>()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             list.add(Manifest.permission.POST_NOTIFICATIONS)
@@ -65,6 +65,7 @@ class MainActivity : AppCompatActivity() {
     private var started = false
     private var notificationListenerPermissionToast: Toast? = null
     private var currentRingtonePrefName = ""
+    private lateinit var currentRingtonePicker: Intent
 
     private var ringtonePickerLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -79,10 +80,30 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+
+    private val requestAudioPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted ->
+            if (!isGranted) {
+                Toast.makeText(
+                    this,
+                    "Reading external storage may be needed to play custom sounds",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+            ringtonePickerLauncher.launch(currentRingtonePicker)
+        }
+
     private var optimizationsResultLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             checkPowerOptimizations()
         }
+
+    private val defaultRingtoneUri by lazy {
+        Uri.Builder().scheme(ContentResolver.SCHEME_ANDROID_RESOURCE).authority(packageName)
+            .path("/raw/default_notification_tone").build()
+    }
 
     private fun launchRingtonePicker(resultPrefName: String, ringtoneType: Int) {
         val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER)
@@ -94,12 +115,12 @@ class MainActivity : AppCompatActivity() {
         )
         intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
         intent.putExtra(
-            RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI,
-            Uri.Builder().scheme(ContentResolver.SCHEME_ANDROID_RESOURCE).authority(packageName)
-                .path("/raw/default_notification_tone").build()
+            RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI, defaultRingtoneUri
         )
         currentRingtonePrefName = PREF_CHAT1_RINGTONE_URI
-        ringtonePickerLauncher.launch(intent)
+        currentRingtonePicker = intent
+
+        requestAudioPermissionLauncher.launch(permissionReadAudio)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -107,6 +128,16 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+        if (!prefs.contains(PREF_CHAT1_RINGTONE_URI)) {
+            prefs.edit().putString(PREF_CHAT1_RINGTONE_URI, defaultRingtoneUri.toString()).apply()
+        }
+        if (!prefs.contains(PREF_CHAT2_RINGTONE_URI)) {
+            prefs.edit().putString(PREF_CHAT2_RINGTONE_URI, defaultRingtoneUri.toString()).apply()
+        }
+        if (!prefs.contains(PREF_CHAT3_RINGTONE_URI)) {
+            prefs.edit().putString(PREF_CHAT3_RINGTONE_URI, defaultRingtoneUri.toString()).apply()
+        }
 
         val versionText = findViewById<TextView>(R.id.versionText)
         val chatName1ET = findViewById<EditText>(R.id.chatName1)
@@ -170,6 +201,18 @@ class MainActivity : AppCompatActivity() {
         }
         testRingtoneB.setOnClickListener {
             NLService.instance?.let {
+                try {
+                    if (it.mediaPlayer?.isPlaying == true) {
+                        it.mediaPlayer?.stop()
+                        val notificationManager = getSystemService(NotificationManager::class.java)
+                        notificationManager.notify(
+                            AVN_NOTIFICATION_ID,
+                            it.notificationServiceRunning().build()
+                        )
+                        return@setOnClickListener
+                    }
+                } catch (_: Exception) {
+                }
                 it.postNewNotification(
                     it.notificationViberMessageReceived().build(),
                     prefs.getString(PREF_CHAT1_RINGTONE_URI, "")!!
@@ -238,13 +281,7 @@ class MainActivity : AppCompatActivity() {
                     continue
                 }
 
-                if (perm == permissionReadAudio) {
-                    Toast.makeText(
-                        this,
-                        "Reading external storage is needed to play custom sounds",
-                        Toast.LENGTH_LONG
-                    ).show()
-                } else if (perm == Manifest.permission.POST_NOTIFICATIONS) {
+                if (perm == Manifest.permission.POST_NOTIFICATIONS) {
                     Toast.makeText(
                         this,
                         "Please enable notifications to use the app properly",
@@ -257,7 +294,7 @@ class MainActivity : AppCompatActivity() {
     private fun startCheckRuntimePermissions() {
         var allGranted = true
 
-        for (perm in permissions) {
+        for (perm in requiredPermissions) {
             if (ContextCompat.checkSelfPermission(this, perm)
                 != PackageManager.PERMISSION_GRANTED
             ) {
@@ -267,7 +304,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (!allGranted) {
-            requestPermissionLauncher.launch(permissions.toTypedArray())
+            requestPermissionLauncher.launch(requiredPermissions.toTypedArray())
         }
 
         start()
