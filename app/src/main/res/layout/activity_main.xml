@@ -7,14 +7,16 @@
     tools:context=".MainActivity">
 
 
-    <ImageButton
-        android:id="@+id/ring2SelectB"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/chatName2"
-        app:srcCompat="@drawable/baseline_library_music_24" />
+    <Button
+        android:id="@+id/testRingtoneB"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:backgroundTint="@color/gray"
+        android:text="Test notification"
+        android:visibility="visible"
+        app:layout_constraintBottom_toTopOf="@+id/restartB"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <EditText
         android:id="@+id/chatName1"
@@ -22,11 +24,10 @@
         android:layout_height="50dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
         android:ems="10"
         android:hint="#1 Chat name to notify"
         android:inputType="textPersonName"
-        app:layout_constraintEnd_toStartOf="@+id/ring1SelectB"
+        app:layout_constraintEnd_toStartOf="@+id/ring1ShortSelectB"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView" />
 
@@ -36,31 +37,103 @@
         android:layout_height="50dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
         android:ems="10"
         android:hint="#2 Chat name to notify"
         android:inputType="textPersonName"
-        app:layout_constraintEnd_toStartOf="@+id/ring2SelectB"
+        app:layout_constraintEnd_toStartOf="@+id/ring2ShortSelectB"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/chatName1" />
 
-    <ImageButton
-        android:id="@+id/ring1SelectB"
-        android:layout_width="48dp"
+    <Button
+        android:id="@+id/ring1ShortSelectB"
+        android:layout_width="50dp"
         android:layout_height="48dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/chatName1"
-        app:srcCompat="@drawable/baseline_library_music_24" />
+        android:layout_marginEnd="8dp"
+        android:padding="4dp"
+        android:text="S"
+        android:textSize="18sp"
+        android:tint="@color/green"
+        app:icon="@drawable/baseline_library_music_24"
+        app:iconGravity="textStart"
+        app:iconPadding="2dp"
+        app:layout_constraintEnd_toStartOf="@+id/ring1LongSelectB"
+        app:layout_constraintTop_toTopOf="@+id/chatName1" />
 
-    <ImageButton
-        android:id="@+id/ring3SelectB"
-        android:layout_width="48dp"
+    <Button
+        android:id="@+id/ring1LongSelectB"
+        android:layout_width="50dp"
         android:layout_height="48dp"
         android:layout_marginEnd="16dp"
+        android:padding="4dp"
+        android:text="L"
+        android:textSize="18sp"
+        android:tint="@color/green"
+        app:icon="@drawable/baseline_library_music_24"
+        app:iconGravity="textStart"
+        app:iconPadding="2dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/chatName3"
-        app:srcCompat="@drawable/baseline_library_music_24" />
+        app:layout_constraintTop_toTopOf="@+id/chatName1" />
+
+    <Button
+        android:id="@+id/ring2ShortSelectB"
+        android:layout_width="50dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="8dp"
+        android:padding="4dp"
+        android:text="S"
+        android:textSize="18sp"
+        android:tint="@color/green"
+        app:icon="@drawable/baseline_library_music_24"
+        app:iconGravity="textStart"
+        app:iconPadding="2dp"
+        app:layout_constraintEnd_toStartOf="@+id/ring2LongSelectB"
+        app:layout_constraintTop_toTopOf="@+id/chatName2" />
+
+    <Button
+        android:id="@+id/ring2LongSelectB"
+        android:layout_width="50dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="16dp"
+        android:padding="4dp"
+        android:text="L"
+        android:textSize="18sp"
+        android:tint="@color/green"
+        app:icon="@drawable/baseline_library_music_24"
+        app:iconGravity="textStart"
+        app:iconPadding="2dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/chatName2" />
+
+
+    <Button
+        android:id="@+id/ring3ShortSelectB"
+        android:layout_width="50dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="8dp"
+        android:padding="4dp"
+        android:text="S"
+        android:textSize="18sp"
+        android:tint="@color/green"
+        app:icon="@drawable/baseline_library_music_24"
+        app:iconGravity="textStart"
+        app:iconPadding="2dp"
+        app:layout_constraintEnd_toStartOf="@+id/ring3LongSelectB"
+        app:layout_constraintTop_toTopOf="@+id/chatName3" />
+
+    <Button
+        android:id="@+id/ring3LongSelectB"
+        android:layout_width="50dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="16dp"
+        android:padding="4dp"
+        android:text="L"
+        android:textSize="18sp"
+        android:tint="@color/green"
+        app:icon="@drawable/baseline_library_music_24"
+        app:iconGravity="textStart"
+        app:iconPadding="2dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/chatName3" />
 
     <EditText
         android:id="@+id/chatName3"
@@ -68,11 +141,10 @@
         android:layout_height="50dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
         android:ems="10"
         android:hint="#3 Chat name to notify"
         android:inputType="textPersonName"
-        app:layout_constraintEnd_toStartOf="@+id/ring3SelectB"
+        app:layout_constraintEnd_toStartOf="@+id/ring2ShortSelectB"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/chatName2" />
 
@@ -138,6 +210,17 @@
         android:layout_marginBottom="8dp"
         android:text="Last notification:"
         app:layout_constraintBottom_toTopOf="@+id/statusText"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/restartB"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:backgroundTint="@color/gray"
+        android:text="Restart"
+        android:visibility="visible"
+        app:layout_constraintBottom_toTopOf="@+id/fixPowerOptimizationsB"
         app:layout_constraintStart_toStartOf="parent" />
 
     <Button

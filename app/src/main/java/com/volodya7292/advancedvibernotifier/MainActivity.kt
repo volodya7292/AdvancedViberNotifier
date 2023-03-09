@@ -3,22 +3,18 @@ package com.volodya7292.advancedvibernotifier
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ImageButton
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
@@ -37,18 +33,40 @@ const val PREF_CHAT2_RINGTONE_URI = "chat2_ringtone_uri"
 const val PREF_CHAT3_RINGTONE_URI = "chat3_ringtone_uri"
 
 class MainActivity : AppCompatActivity() {
-    lateinit var prefs: SharedPreferences
-    lateinit var statusText: TextView
-    lateinit var lastNotificationText: TextView
-    lateinit var fixPowerOptimizationsB: Button
-    lateinit var ring1SelectB: ImageButton
-    lateinit var ring2SelectB: ImageButton
-    lateinit var ring3SelectB: ImageButton
-    var started = false
-    var notificationListenerPermissionToast: Toast? = null
-    var currentRingtonePrefName = ""
+    private val permissionReadAudio by lazy {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_AUDIO
+        } else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+    }
+    private val permissions by lazy {
+        val list = mutableListOf(permissionReadAudio)
 
-    private var resultLauncher =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            list.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
+        list
+    }
+
+    private lateinit var prefs: SharedPreferences
+    private lateinit var statusText: TextView
+    private lateinit var lastNotificationText: TextView
+    private lateinit var fixPowerOptimizationsB: Button
+    private lateinit var testRingtoneB: Button
+    private lateinit var ring1ShortSelectB: Button
+    private lateinit var ring1LongSelectB: Button
+    private lateinit var ring2ShortSelectB: Button
+    private lateinit var ring2LongSelectB: Button
+    private lateinit var ring3ShortSelectB: Button
+    private lateinit var ring3LongSelectB: Button
+    private lateinit var restartB: Button
+    private var started = false
+    private var notificationListenerPermissionToast: Toast? = null
+    private var currentRingtonePrefName = ""
+
+    private var ringtonePickerLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
                 val data: Intent? = result.data
@@ -66,6 +84,24 @@ class MainActivity : AppCompatActivity() {
             checkPowerOptimizations()
         }
 
+    private fun launchRingtonePicker(resultPrefName: String, ringtoneType: Int) {
+        val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER)
+        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, ringtoneType)
+        val currRingtoneUri = prefs.getString(resultPrefName, "")
+        intent.putExtra(
+            RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
+            Uri.parse(currRingtoneUri)
+        )
+        intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+        intent.putExtra(
+            RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI,
+            Uri.Builder().scheme(ContentResolver.SCHEME_ANDROID_RESOURCE).authority(packageName)
+                .path("/raw/default_notification_tone").build()
+        )
+        currentRingtonePrefName = PREF_CHAT1_RINGTONE_URI
+        ringtonePickerLauncher.launch(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -77,12 +113,18 @@ class MainActivity : AppCompatActivity() {
         val chatName2ET = findViewById<EditText>(R.id.chatName2)
         val chatName3ET = findViewById<EditText>(R.id.chatName3)
         val stopSecondServiceSwitch = findViewById<SwitchCompat>(R.id.stopSecondServiceSwitch)
-        ring1SelectB = findViewById(R.id.ring1SelectB)
-        ring2SelectB = findViewById(R.id.ring2SelectB)
-        ring3SelectB = findViewById(R.id.ring3SelectB)
+
+        ring1ShortSelectB = findViewById(R.id.ring1ShortSelectB)
+        ring1LongSelectB = findViewById(R.id.ring1LongSelectB)
+        ring2ShortSelectB = findViewById(R.id.ring2ShortSelectB)
+        ring2LongSelectB = findViewById(R.id.ring2LongSelectB)
+        ring3ShortSelectB = findViewById(R.id.ring3ShortSelectB)
+        ring3LongSelectB = findViewById(R.id.ring3LongSelectB)
+        restartB = findViewById(R.id.restartB)
         statusText = findViewById(R.id.statusText)
         lastNotificationText = findViewById(R.id.lastNotificationText)
         fixPowerOptimizationsB = findViewById(R.id.fixPowerOptimizationsB)
+        testRingtoneB = findViewById(R.id.testRingtoneB)
 
         stopSecondServiceSwitch.isChecked = prefs.getBoolean(PREF_STOP_SECOND_SERVICE, true)
         stopSecondServiceSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -104,37 +146,49 @@ class MainActivity : AppCompatActivity() {
             prefs.edit().putString(PREF_CHAT3, it.toString()).apply()
         }
 
-        ring1SelectB.setOnClickListener {
-            val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER)
-            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALL)
-            currentRingtonePrefName = PREF_CHAT1_RINGTONE_URI
-            resultLauncher.launch(intent)
+        ring1ShortSelectB.setOnClickListener {
+            launchRingtonePicker(PREF_CHAT1_RINGTONE_URI, RingtoneManager.TYPE_NOTIFICATION)
         }
-        ring2SelectB.setOnClickListener {
-            val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER)
-            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALL)
-            currentRingtonePrefName = PREF_CHAT2_RINGTONE_URI
-            resultLauncher.launch(intent)
+        ring1LongSelectB.setOnClickListener {
+            launchRingtonePicker(PREF_CHAT1_RINGTONE_URI, RingtoneManager.TYPE_RINGTONE)
         }
-        ring3SelectB.setOnClickListener {
-            val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER)
-            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALL)
-            currentRingtonePrefName = PREF_CHAT3_RINGTONE_URI
-            resultLauncher.launch(intent)
+        ring2ShortSelectB.setOnClickListener {
+            launchRingtonePicker(PREF_CHAT2_RINGTONE_URI, RingtoneManager.TYPE_NOTIFICATION)
+        }
+        ring2LongSelectB.setOnClickListener {
+            launchRingtonePicker(PREF_CHAT2_RINGTONE_URI, RingtoneManager.TYPE_RINGTONE)
+        }
+        ring3ShortSelectB.setOnClickListener {
+            launchRingtonePicker(PREF_CHAT3_RINGTONE_URI, RingtoneManager.TYPE_NOTIFICATION)
+        }
+        ring3LongSelectB.setOnClickListener {
+            launchRingtonePicker(PREF_CHAT3_RINGTONE_URI, RingtoneManager.TYPE_RINGTONE)
+        }
+
+        restartB.setOnClickListener {
+            restart()
+        }
+        testRingtoneB.setOnClickListener {
+            NLService.instance?.let {
+                it.postNewNotification(
+                    it.notificationViberMessageReceived().build(),
+                    prefs.getString(PREF_CHAT1_RINGTONE_URI, "")!!
+                )
+            }
         }
 
         NLService.lastNotificationTextData.observe(this) {
             lastNotificationText.text = it
         }
+
+        startCheckRuntimePermissions()
     }
 
-    @SuppressLint("BatteryLife")
     override fun onResume() {
         if (Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
                 .contains(packageName)
         ) {
             notificationListenerPermissionToast?.cancel()
-            startCheckRuntimePermissions()
         } else {
             notificationListenerPermissionToast = Toast.makeText(
                 this,
@@ -146,28 +200,9 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
         }
 
-        if (prefs.contains(PREF_CHAT1_RINGTONE_URI)) {
-            ring1SelectB.setColorFilter(
-                Color.rgb(0, 180, 0),
-                android.graphics.PorterDuff.Mode.MULTIPLY
-            )
-        }
-        if (prefs.contains(PREF_CHAT2_RINGTONE_URI)) {
-            ring2SelectB.setColorFilter(
-                Color.rgb(0, 180, 0),
-                android.graphics.PorterDuff.Mode.MULTIPLY
-            )
-        }
-        if (prefs.contains(PREF_CHAT3_RINGTONE_URI)) {
-            ring3SelectB.setColorFilter(
-                Color.rgb(0, 180, 0),
-                android.graphics.PorterDuff.Mode.MULTIPLY
-            )
-        }
+        lastNotificationText.text = prefs.getString(PREF_LAST_NOTIFICATION_TEXT, "")
 
         checkPowerOptimizations()
-
-        lastNotificationText.text = prefs.getString(PREF_LAST_NOTIFICATION_TEXT, "")
 
         super.onResume()
     }
@@ -194,32 +229,49 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun startCheckRuntimePermissions() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-            == PackageManager.PERMISSION_GRANTED
-        ) {
-            start()
-        } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }
-    }
-
     private val requestPermissionLauncher =
         registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted: Boolean ->
-            if (!isGranted) {
-                Toast.makeText(
-                    this,
-                    "Please enable notifications to use the app properly",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { results: Map<String, Boolean> ->
+            for ((perm, granted) in results) {
+                if (granted) {
+                    continue
+                }
 
-            start()
+                if (perm == permissionReadAudio) {
+                    Toast.makeText(
+                        this,
+                        "Reading external storage is needed to play custom sounds",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else if (perm == Manifest.permission.POST_NOTIFICATIONS) {
+                    Toast.makeText(
+                        this,
+                        "Please enable notifications to use the app properly",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
         }
+
+    private fun startCheckRuntimePermissions() {
+        var allGranted = true
+
+        for (perm in permissions) {
+            if (ContextCompat.checkSelfPermission(this, perm)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                allGranted = false
+                continue
+            }
+        }
+
+        if (!allGranted) {
+            requestPermissionLauncher.launch(permissions.toTypedArray())
+        }
+
+        start()
+    }
 
     private fun start() {
         if (started) {
@@ -234,5 +286,15 @@ class MainActivity : AppCompatActivity() {
         } else {
             statusText.text = "Service is already running"
         }
+    }
+
+    private fun restart() {
+        stopService(Intent(this, NLService::class.java))
+
+        val intent = packageManager.getLaunchIntentForPackage(packageName)
+        val mainIntent = Intent.makeRestartActivityTask(intent!!.component)
+        startActivity(mainIntent)
+
+        Runtime.getRuntime().exit(0)
     }
 }

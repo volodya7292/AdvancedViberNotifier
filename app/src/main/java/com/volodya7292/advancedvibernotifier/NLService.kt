@@ -29,7 +29,7 @@ class NLService : NotificationListenerService() {
         }
     }
 
-    fun defaultNotification(): Notification.Builder {
+    fun notificationDefault(): Notification.Builder {
         val notification = Notification.Builder(this, NOTIFICATION_CHANNEL_GENERAL)
             .setContentTitle("Service enabled").setContentText("Service is running")
             .setSmallIcon(R.drawable.baseline_notifications_24)
@@ -49,6 +49,21 @@ class NLService : NotificationListenerService() {
         }
 
         return notification
+    }
+
+    fun notificationViberMessageReceived(): Notification.Builder {
+        return notificationDefault()
+            .setContentText("Tap to stop the ringtone")
+            .setContentIntent(
+                PendingIntent.getService(
+                    this,
+                    0,
+                    Intent(this, NotificationActionService::class.java).setAction(
+                        NotificationActionService.STOP_RINGTONE
+                    ),
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_ONE_SHOT
+                )
+            )
     }
 
     override fun onCreate() {
@@ -80,7 +95,7 @@ class NLService : NotificationListenerService() {
         instance = this
         prefs = applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-        startForeground(AVN_NOTIFICATION_ID, defaultNotification().build())
+        startForeground(AVN_NOTIFICATION_ID, notificationDefault().build())
         Log.i(TAG, "Notification listener service started")
 
         return START_REDELIVER_INTENT
@@ -129,26 +144,14 @@ class NLService : NotificationListenerService() {
             prefs.edit().putString(PREF_LAST_NOTIFICATION_TEXT, lastNotificationText).apply()
             lastNotificationTextData.value = lastNotificationText
 
-            val notification = defaultNotification()
-                .setContentText("Tap to stop the ringtone")
-                .setContentIntent(
-                    PendingIntent.getService(
-                        this,
-                        0,
-                        Intent(this, NotificationActionService::class.java).setAction(
-                            NotificationActionService.STOP_RINGTONE
-                        ),
-                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_ONE_SHOT
-                    )
-                )
-                .build()
-
+            val notification = notificationViberMessageReceived().build()
             postNewNotification(notification, tone)
+
             break
         }
     }
 
-    private fun postNewNotification(notification: Notification, toneUriStr: String) {
+    fun postNewNotification(notification: Notification, toneUriStr: String) {
         try {
             if (mediaPlayer != null && mediaPlayer!!.isPlaying) {
                 return
@@ -166,7 +169,7 @@ class NLService : NotificationListenerService() {
             MediaPlayer.create(this, R.raw.default_notification_tone)
         }
         mediaPlayer?.setOnCompletionListener {
-            notificationManager.notify(AVN_NOTIFICATION_ID, defaultNotification().build())
+            notificationManager.notify(AVN_NOTIFICATION_ID, notificationDefault().build())
         }
         mediaPlayer?.start()
     }
