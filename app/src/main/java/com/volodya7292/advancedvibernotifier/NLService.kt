@@ -19,6 +19,7 @@ class NLService : NotificationListenerService() {
     lateinit var prefs: SharedPreferences
     var lastMsgTime: Long = 0
     var mediaPlayer: MediaPlayer? = null
+    lateinit var currentNotification: Notification.Builder
 
     companion object {
         var instance: NLService? = null
@@ -53,6 +54,10 @@ class NLService : NotificationListenerService() {
 
     fun notificationServiceRunning(): Notification.Builder {
         return notificationServiceStarting().setContentText("Service is running")
+    }
+
+    fun notificationListenerDisconnected(): Notification.Builder {
+        return notificationServiceStarting().setContentText("Notification listener is disconnected")
     }
 
     fun notificationViberMessageReceived(): Notification.Builder {
@@ -94,17 +99,27 @@ class NLService : NotificationListenerService() {
         instance = this
         prefs = applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-        startForeground(AVN_NOTIFICATION_ID, notificationServiceStarting().build())
+        currentNotification = notificationServiceStarting()
+        startForeground(AVN_NOTIFICATION_ID, currentNotification.build())
         Log.i(TAG, "Notification listener service started")
 
         return START_REDELIVER_INTENT
     }
 
     override fun onListenerConnected() {
+        currentNotification = notificationServiceRunning()
         val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager.notify(AVN_NOTIFICATION_ID, notificationServiceRunning().build())
+        notificationManager.notify(AVN_NOTIFICATION_ID, currentNotification.build())
         super.onListenerConnected()
     }
+
+    override fun onListenerDisconnected() {
+        currentNotification = notificationListenerDisconnected()
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.notify(AVN_NOTIFICATION_ID, currentNotification.build())
+        super.onListenerConnected()
+    }
+
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)

@@ -207,7 +207,7 @@ class MainActivity : AppCompatActivity() {
                         val notificationManager = getSystemService(NotificationManager::class.java)
                         notificationManager.notify(
                             AVN_NOTIFICATION_ID,
-                            it.notificationServiceRunning().build()
+                            it.currentNotification.build()
                         )
                         return@setOnClickListener
                     }

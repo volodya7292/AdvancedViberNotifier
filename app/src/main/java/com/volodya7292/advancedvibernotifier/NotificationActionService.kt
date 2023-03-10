@@ -33,7 +33,7 @@ class NotificationActionService : Service() {
             }
 
             val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager.notify(AVN_NOTIFICATION_ID, it.notificationServiceRunning().build())
+            notificationManager.notify(AVN_NOTIFICATION_ID, it.currentNotification.build())
         }
 
         if (prefs.getBoolean(PREF_STOP_SECOND_SERVICE, true)) {
