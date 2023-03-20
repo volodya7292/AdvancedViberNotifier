@@ -64,7 +64,10 @@ class NLService : NotificationListenerService() {
     }
 
     fun serviceStopped(): Notification.Builder {
-        return notificationServiceStarting().setContentText("Service is stopped")
+        return notificationServiceStarting()
+            .setContentTitle("Service status")
+            .setContentText("Service is stopped")
+            .setSmallIcon(R.drawable.baseline_notifications_off_24)
             .setOngoing(false)
     }
 
