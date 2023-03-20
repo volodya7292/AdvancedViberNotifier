@@ -1,6 +1,7 @@
 package com.volodya7292.advancedvibernotifier
 
 import android.app.*
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -19,6 +20,8 @@ class NLService : NotificationListenerService() {
     lateinit var prefs: SharedPreferences
     var lastMsgTime: Long = 0
     var mediaPlayer: MediaPlayer? = null
+    var listenerConnected = false
+    var stopped = false
     lateinit var currentNotification: Notification.Builder
 
     companion object {
@@ -60,6 +63,11 @@ class NLService : NotificationListenerService() {
         return notificationServiceStarting().setContentText("Notification listener is disconnected")
     }
 
+    fun serviceStopped(): Notification.Builder {
+        return notificationServiceStarting().setContentText("Service is stopped")
+            .setOngoing(false)
+    }
+
     fun notificationViberMessageReceived(): Notification.Builder {
         return notificationServiceRunning()
             .setContentText("Tap to stop the ringtone")
@@ -73,6 +81,19 @@ class NLService : NotificationListenerService() {
                     PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_ONE_SHOT
                 )
             )
+    }
+
+    fun stop() {
+        instance = null
+        stopped = true
+
+        if (listenerConnected) {
+            requestUnbind()
+        }
+        stopSelf()
+
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.notify(AVN_NOTIFICATION_ID, serviceStopped().build())
     }
 
     override fun onCreate() {
@@ -103,10 +124,16 @@ class NLService : NotificationListenerService() {
         startForeground(AVN_NOTIFICATION_ID, currentNotification.build())
         Log.i(TAG, "Notification listener service started")
 
+        try {
+            requestRebind(ComponentName(this, NLService::class.java))
+        } catch (_: Exception) {
+        }
+
         return START_REDELIVER_INTENT
     }
 
     override fun onListenerConnected() {
+        listenerConnected = true
         currentNotification = notificationServiceRunning()
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.notify(AVN_NOTIFICATION_ID, currentNotification.build())
@@ -114,9 +141,14 @@ class NLService : NotificationListenerService() {
     }
 
     override fun onListenerDisconnected() {
-        currentNotification = notificationListenerDisconnected()
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager.notify(AVN_NOTIFICATION_ID, currentNotification.build())
+        listenerConnected = false
+
+        if (!stopped) {
+            currentNotification = notificationListenerDisconnected()
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            notificationManager.notify(AVN_NOTIFICATION_ID, currentNotification.build())
+        }
+
         super.onListenerConnected()
     }
 

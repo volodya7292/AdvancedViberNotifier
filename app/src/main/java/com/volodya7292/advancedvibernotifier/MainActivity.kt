@@ -23,6 +23,7 @@ import androidx.core.widget.addTextChangedListener
 
 const val TAG = "AVN"
 const val PREFS_NAME = "PREFS"
+const val PREF_ACTIVE = "active"
 const val PREF_CHAT1 = "chatName1"
 const val PREF_CHAT2 = "chatName2"
 const val PREF_CHAT3 = "chatName3"
@@ -62,7 +63,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var ring3ShortSelectB: Button
     private lateinit var ring3LongSelectB: Button
     private lateinit var restartB: Button
-    private var started = false
     private var notificationListenerPermissionToast: Toast? = null
     private var currentRingtonePrefName = ""
     private lateinit var currentRingtonePicker: Intent
@@ -81,19 +81,18 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-    private val requestAudioPermissionLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestPermission()
-        ) { isGranted ->
-            if (!isGranted) {
-                Toast.makeText(
-                    this,
-                    "Reading external storage may be needed to play custom sounds",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-            ringtonePickerLauncher.launch(currentRingtonePicker)
+    private val requestAudioPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (!isGranted) {
+            Toast.makeText(
+                this,
+                "Reading external storage may be needed to play custom sounds",
+                Toast.LENGTH_LONG
+            ).show()
         }
+        ringtonePickerLauncher.launch(currentRingtonePicker)
+    }
 
     private var optimizationsResultLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -110,8 +109,7 @@ class MainActivity : AppCompatActivity() {
         intent.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, ringtoneType)
         val currRingtoneUri = prefs.getString(resultPrefName, "")
         intent.putExtra(
-            RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
-            Uri.parse(currRingtoneUri)
+            RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, Uri.parse(currRingtoneUri)
         )
         intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
         intent.putExtra(
@@ -144,6 +142,7 @@ class MainActivity : AppCompatActivity() {
         val chatName2ET = findViewById<EditText>(R.id.chatName2)
         val chatName3ET = findViewById<EditText>(R.id.chatName3)
         val stopSecondServiceSwitch = findViewById<SwitchCompat>(R.id.stopSecondServiceSwitch)
+        val activeSwitch = findViewById<SwitchCompat>(R.id.activeSwitch)
 
         ring1ShortSelectB = findViewById(R.id.ring1ShortSelectB)
         ring1LongSelectB = findViewById(R.id.ring1LongSelectB)
@@ -196,6 +195,19 @@ class MainActivity : AppCompatActivity() {
             launchRingtonePicker(PREF_CHAT3_RINGTONE_URI, RingtoneManager.TYPE_RINGTONE)
         }
 
+        activeSwitch.isChecked = prefs.getBoolean(PREF_ACTIVE, true)
+        activeSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                val serviceIntent = Intent(this, NLService::class.java)
+                startForegroundService(serviceIntent)
+                statusText.text = "Service started"
+            } else {
+                NLService.instance?.stop()
+                statusText.text = "Service is stopped"
+            }
+            prefs.edit().putBoolean(PREF_ACTIVE, isChecked).apply()
+        }
+
         restartB.setOnClickListener {
             restart()
         }
@@ -234,9 +246,7 @@ class MainActivity : AppCompatActivity() {
             notificationListenerPermissionToast?.cancel()
         } else {
             notificationListenerPermissionToast = Toast.makeText(
-                this,
-                "Please grant permission to enable NOTIFICATION_LISTENER",
-                Toast.LENGTH_LONG
+                this, "Please grant permission to enable notification listener", Toast.LENGTH_LONG
             )
             notificationListenerPermissionToast?.show()
 
@@ -272,31 +282,30 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private val requestPermissionLauncher =
-        registerForActivityResult(
-            ActivityResultContracts.RequestMultiplePermissions()
-        ) { results: Map<String, Boolean> ->
-            for ((perm, granted) in results) {
-                if (granted) {
-                    continue
-                }
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results: Map<String, Boolean> ->
+        for ((perm, granted) in results) {
+            if (granted) {
+                continue
+            }
 
-                if (perm == Manifest.permission.POST_NOTIFICATIONS) {
-                    Toast.makeText(
-                        this,
-                        "Please enable notifications to use the app properly",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
+            if (perm == Manifest.permission.POST_NOTIFICATIONS) {
+                Toast.makeText(
+                    this, "Please enable notifications to use the app properly", Toast.LENGTH_LONG
+                ).show()
             }
         }
+    }
 
     private fun startCheckRuntimePermissions() {
         var allGranted = true
 
         for (perm in requiredPermissions) {
-            if (ContextCompat.checkSelfPermission(this, perm)
-                != PackageManager.PERMISSION_GRANTED
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    perm
+                ) != PackageManager.PERMISSION_GRANTED
             ) {
                 allGranted = false
                 continue
@@ -311,17 +320,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun start() {
-        if (started) {
-            return
-        }
-        started = true
-
-        if (!NLService.isInstanceCreated()) {
-            val serviceIntent = Intent(this, NLService::class.java)
-            startForegroundService(serviceIntent)
-            statusText.text = "Service started"
+        if (prefs.getBoolean(PREF_ACTIVE, true)) {
+            if (!NLService.isInstanceCreated()) {
+                val serviceIntent = Intent(this, NLService::class.java)
+                startForegroundService(serviceIntent)
+                statusText.text = "Service started"
+            } else {
+                statusText.text = "Service is already running"
+            }
         } else {
-            statusText.text = "Service is already running"
+            statusText.text = "Service is disabled"
         }
     }
 
